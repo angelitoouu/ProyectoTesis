@@ -98,15 +98,19 @@ const deleteEncargo = async (id) => {
 
 // Objetivo específico 4: vista pública de consulta por teléfono o código de ticket
 const buscarPublico = async (query) => {
+  const cleanQuery = (query || '').trim();
+  const phoneWithoutSpaces = cleanQuery.replace(/\s+/g, '');
   const { rows } = await pool.query(
     `SELECT e.codigo_ticket, e.prenda, e.estado, e.fecha_entrega_estimada,
             e.precio_total, e.abono, (e.precio_total - e.abono) AS saldo,
             c.nombre AS cliente_nombre
      FROM encargos e
      JOIN clientes c ON c.id = e.cliente_id
-     WHERE e.codigo_ticket = $1 OR c.telefono = $1
+     WHERE UPPER(TRIM(e.codigo_ticket)) = UPPER($1)
+        OR TRIM(c.telefono) = $1
+        OR REPLACE(TRIM(c.telefono), ' ', '') = $2
      ORDER BY e.fecha_entrega_estimada ASC`,
-    [query]
+    [cleanQuery, phoneWithoutSpaces]
   );
   return rows;
 };

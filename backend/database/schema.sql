@@ -1,13 +1,17 @@
 -- Esquema de base de datos: Sistema de gestión para taller de costura
 -- Ejecutar con: psql -U tu_usuario -d nombre_bd -f schema.sql
 
-CREATE TYPE estado_encargo AS ENUM (
-  'pendiente',
-  'en_proceso',
-  'listo_prueba',
-  'listo_retiro',
-  'entregado'
-);
+DO $$ BEGIN
+  CREATE TYPE estado_encargo AS ENUM (
+    'pendiente',
+    'en_proceso',
+    'listo_prueba',
+    'listo_retiro',
+    'entregado'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 CREATE TABLE IF NOT EXISTS clientes (
   id SERIAL PRIMARY KEY,

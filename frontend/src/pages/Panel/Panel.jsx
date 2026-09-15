@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import EstadoBadge from '../../components/EstadoBadge';
+import { formatFecha } from '../../utils/formatDate';
 
 // Objetivo específico 2: panel con cambio de estados, ordenado por fecha de entrega
 const ESTADOS = [
@@ -49,7 +50,7 @@ const Panel = () => {
                 <div className="card" key={e.id}>
                   <strong>{e.prenda}</strong>
                   <div>{e.cliente_nombre}</div>
-                  <div>Entrega: {new Date(e.fecha_entrega_estimada).toLocaleDateString('es-CL')}</div>
+                  <div>Entrega: {formatFecha(e.fecha_entrega_estimada)}</div>
                   <div>Ticket: {e.codigo_ticket}</div>
                   <EstadoBadge estado={e.estado} />
                   <select value={e.estado} onChange={(ev) => cambiarEstado(e.id, ev.target.value)}>

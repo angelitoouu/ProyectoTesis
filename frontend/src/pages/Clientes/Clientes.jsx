@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import EstadoBadge from '../../components/EstadoBadge';
+import { formatFecha } from '../../utils/formatDate';
 
 // Objetivo específico 3: historial de clientes con medidas y trabajos anteriores
 const Clientes = () => {
@@ -47,7 +48,7 @@ const Clientes = () => {
             <div className="card" key={e.id} style={{ marginTop: '0.5rem' }}>
               <strong>{e.prenda}</strong> — {e.descripcion_trabajo || 'Sin descripción'}
               <div>Medidas: {e.medidas ? JSON.stringify(e.medidas) : 'No registradas'}</div>
-              <div>Entrega: {new Date(e.fecha_entrega_estimada).toLocaleDateString('es-CL')}</div>
+              <div>Entrega: {formatFecha(e.fecha_entrega_estimada)}</div>
               <EstadoBadge estado={e.estado} />
             </div>
           ))}

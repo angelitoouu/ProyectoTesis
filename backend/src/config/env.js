@@ -1,14 +1,17 @@
 require('dotenv').config();
 
-const fallbackDatabaseUrl = 'postgresql://postgres:1234@localhost:5432/taller_costura';
+const host = process.env.DB_HOST || process.env.HOST || 'localhost';
+const port = process.env.DB_PORT || 5432;
+const username = process.env.DB_USERNAME || 'postgres';
+const password = process.env.PASSWORD || process.env.DB_PASSWORD || '1234';
+const database = process.env.DATABASE || 'TallerCostura';
+
 const databaseUrl =
   process.env.DATABASE_URL ||
-  (process.env.DB_HOST && process.env.DB_USERNAME && process.env.DATABASE
-    ? `postgresql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD || '1234'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DATABASE}`
-    : fallbackDatabaseUrl);
+  `postgresql://${username}:${password}@${host}:${port}/${database}`;
 
 module.exports = {
-  PORT: process.env.PORT || 4000,
+  PORT: process.env.PORT || 3000,
   DATABASE_URL: databaseUrl,
   NODE_ENV: process.env.NODE_ENV || 'development',
 };

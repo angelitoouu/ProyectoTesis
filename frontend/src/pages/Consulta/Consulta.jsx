@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../../services/api';
 import EstadoBadge from '../../components/EstadoBadge';
+import { formatFecha } from '../../utils/formatDate';
 
 // Objetivo específico 4: vista pública de consulta por teléfono o código de ticket
 const Consulta = () => {
@@ -42,7 +43,7 @@ const Consulta = () => {
           <h3>{r.prenda}</h3>
           <p>Cliente: {r.cliente_nombre}</p>
           <p>Ticket: {r.codigo_ticket}</p>
-          <p>Fecha estimada de entrega: {new Date(r.fecha_entrega_estimada).toLocaleDateString('es-CL')}</p>
+          <p>Fecha estimada de entrega: {formatFecha(r.fecha_entrega_estimada)}</p>
           <p>Saldo pendiente: ${r.saldo}</p>
           <EstadoBadge estado={r.estado} />
         </div>
