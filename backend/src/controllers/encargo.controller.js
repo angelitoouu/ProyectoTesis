@@ -21,7 +21,34 @@ const getEncargo = async (req, res, next) => {
 
 const createEncargo = async (req, res, next) => {
   try {
-    const nuevo = await encargoService.createEncargo(req.body);
+    const { nombre_cliente, telefono_cliente, prenda, precio_total, abono, fecha_entrega_estimada } = req.body;
+
+    if (!nombre_cliente || !telefono_cliente || !prenda || precio_total === undefined || !fecha_entrega_estimada) {
+      return res.status(400).json({
+        message: 'Faltan campos obligatorios: nombre, teléfono, prenda, fecha estimada y precio total.'
+      });
+    }
+
+    const numPrecio = Number(precio_total);
+    const numAbono = Number(abono || 0);
+
+    if (isNaN(numPrecio) || numPrecio <= 0) {
+      return res.status(400).json({ message: 'El precio total debe ser un número positivo.' });
+    }
+
+    if (isNaN(numAbono) || numAbono < 0) {
+      return res.status(400).json({ message: 'El abono no puede ser negativo.' });
+    }
+
+    if (numAbono > numPrecio) {
+      return res.status(400).json({ message: 'El abono no puede ser superior al precio total.' });
+    }
+
+    const nuevo = await encargoService.createEncargo({
+      ...req.body,
+      precio_total: numPrecio,
+      abono: numAbono,
+    });
     res.status(201).json(nuevo);
   } catch (error) {
     next(error);
