@@ -10,14 +10,21 @@ const NuevoEncargo = () => {
     direccion_cliente: '',
     prenda: '',
     descripcion_trabajo: '',
-    cintura: '',
-    largo: '',
-    tiro: '',
-    busto: '',
-    cadera: '',
     fecha_entrega_estimada: '',
     precio_total: '',
     abono: '',
+  });
+
+  const [tipoMedidas, setTipoMedidas] = useState('superior');
+  const [medidas, setMedidas] = useState({
+    pecho: '',
+    largo: '',
+    manga: '',
+    hombros: '',
+    cintura: '',
+    cadera: '',
+    nombre_personalizado: '',
+    valor_personalizado: '',
   });
 
   const [ticketGenerado, setTicketGenerado] = useState(null);
@@ -27,6 +34,10 @@ const NuevoEncargo = () => {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleMedidaChange = (e) => {
+    setMedidas({ ...medidas, [e.target.name]: e.target.value });
   };
 
   const precioNum = Number(form.precio_total) || 0;
@@ -44,12 +55,27 @@ const NuevoEncargo = () => {
 
     setCargando(true);
     try {
-      const medidas = {};
-      if (form.cintura) medidas.cintura = Number(form.cintura);
-      if (form.largo) medidas.largo = Number(form.largo);
-      if (form.tiro) medidas.tiro = Number(form.tiro);
-      if (form.busto) medidas.busto = Number(form.busto);
-      if (form.cadera) medidas.cadera = Number(form.cadera);
+      const medidasPayload = {};
+
+      if (tipoMedidas === 'superior') {
+        if (medidas.pecho) medidasPayload.pecho = Number(medidas.pecho);
+        if (medidas.largo) medidasPayload.largo = Number(medidas.largo);
+        if (medidas.manga) medidasPayload.manga = Number(medidas.manga);
+        if (medidas.hombros) medidasPayload.hombros = Number(medidas.hombros);
+      } else if (tipoMedidas === 'inferior') {
+        if (medidas.cintura) medidasPayload.cintura = Number(medidas.cintura);
+        if (medidas.largo) medidasPayload.largo = Number(medidas.largo);
+        if (medidas.cadera) medidasPayload.cadera = Number(medidas.cadera);
+      } else if (tipoMedidas === 'completo') {
+        if (medidas.pecho) medidasPayload.pecho = Number(medidas.pecho);
+        if (medidas.cintura) medidasPayload.cintura = Number(medidas.cintura);
+        if (medidas.cadera) medidasPayload.cadera = Number(medidas.cadera);
+        if (medidas.largo) medidasPayload.largo = Number(medidas.largo);
+      } else if (tipoMedidas === 'personalizado') {
+        if (medidas.nombre_personalizado.trim() && medidas.valor_personalizado) {
+          medidasPayload[medidas.nombre_personalizado.trim().toLowerCase()] = Number(medidas.valor_personalizado);
+        }
+      }
 
       const { data } = await api.post('/encargos', {
         nombre_cliente: form.nombre_cliente.trim(),
@@ -57,7 +83,7 @@ const NuevoEncargo = () => {
         direccion_cliente: form.direccion_cliente.trim(),
         prenda: form.prenda.trim(),
         descripcion_trabajo: form.descripcion_trabajo.trim(),
-        medidas,
+        medidas: Object.keys(medidasPayload).length > 0 ? medidasPayload : null,
         fecha_entrega_estimada: form.fecha_entrega_estimada,
         precio_total: precioNum,
         abono: abonoNum,
@@ -70,17 +96,22 @@ const NuevoEncargo = () => {
         direccion_cliente: '',
         prenda: '',
         descripcion_trabajo: '',
-        cintura: '',
-        largo: '',
-        tiro: '',
-        busto: '',
-        cadera: '',
         fecha_entrega_estimada: '',
         precio_total: '',
         abono: '',
       });
+      setMedidas({
+        pecho: '',
+        largo: '',
+        manga: '',
+        hombros: '',
+        cintura: '',
+        cadera: '',
+        nombre_personalizado: '',
+        valor_personalizado: '',
+      });
     } catch (err) {
-      const mensaje = err.response?.data?.message || 'No se pudo registrar el encargo. Revisa la conexión.';
+      const mensaje = err.response?.data?.message || 'No se pudo registrar el encargo. Revisa la conexion.';
       setError(mensaje);
       console.error(err);
     } finally {
@@ -108,14 +139,14 @@ const NuevoEncargo = () => {
           <div>
             <strong>Encargo registrado exitosamente.</strong>
             <p style={{ marginTop: '0.2rem' }}>
-              Código de Ticket generado:{' '}
+              Codigo de Ticket generado:{' '}
               <span className="ticket-tag">{ticketGenerado}</span>
               <button type="button" className="btn-copy" onClick={copiarTicket}>
                 {copiado ? 'Copiado' : 'Copiar ticket'}
               </button>
             </p>
             <p style={{ fontSize: '0.85rem', color: 'var(--success-text)', marginTop: '0.3rem' }}>
-              Proporciona este código o el número de teléfono al cliente para que realice seguimiento en la Consulta Pública.
+              Proporciona este codigo o el numero de telefono al cliente para que realice seguimiento en la Consulta Publica.
             </p>
           </div>
         </div>
@@ -137,14 +168,14 @@ const NuevoEncargo = () => {
               <input
                 id="nombre_cliente"
                 name="nombre_cliente"
-                placeholder="Ej. María Elena Pérez"
+                placeholder="Ej. Maria Elena Perez"
                 value={form.nombre_cliente}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="form-group">
-              <label htmlFor="telefono_cliente">Teléfono de Contacto *</label>
+              <label htmlFor="telefono_cliente">Telefono de Contacto *</label>
               <input
                 id="telefono_cliente"
                 name="telefono_cliente"
@@ -153,10 +184,10 @@ const NuevoEncargo = () => {
                 onChange={handleChange}
                 required
               />
-              <span className="hint">Se usará para consultar estados y contacto.</span>
+              <span className="hint">Se usara para consultar estados y contacto.</span>
             </div>
             <div className="form-group">
-              <label htmlFor="direccion_cliente">Dirección (Opcional)</label>
+              <label htmlFor="direccion_cliente">Direccion (Opcional)</label>
               <input
                 id="direccion_cliente"
                 name="direccion_cliente"
@@ -175,7 +206,7 @@ const NuevoEncargo = () => {
               <input
                 id="prenda"
                 name="prenda"
-                placeholder="Ej. Vestido de fiesta, Pantalón de vestir"
+                placeholder="Ej. Poleron, Vestido, Pantalon, Chaqueta"
                 value={form.prenda}
                 onChange={handleChange}
                 required
@@ -186,73 +217,198 @@ const NuevoEncargo = () => {
               <textarea
                 id="descripcion_trabajo"
                 name="descripcion_trabajo"
-                placeholder="Ej. Ajuste de cintura, basta, cambio de cierre..."
+                placeholder="Ej. Cambiarle el cierre, ajuste de costura, basta..."
                 value={form.descripcion_trabajo}
                 onChange={handleChange}
               />
             </div>
           </div>
 
-          {/* Card 3: Medidas */}
+          {/* Card 3: Medidas adaptables */}
           <div className="form-card">
-            <h3>Medidas Principales (cm)</h3>
-            <div className="form-row-2">
-              <div className="form-group">
-                <label htmlFor="cintura">Cintura</label>
-                <input
-                  id="cintura"
-                  name="cintura"
-                  type="number"
-                  placeholder="cm"
-                  value={form.cintura}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="largo">Largo</label>
-                <input
-                  id="largo"
-                  name="largo"
-                  type="number"
-                  placeholder="cm"
-                  value={form.largo}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="tiro">Tiro</label>
-                <input
-                  id="tiro"
-                  name="tiro"
-                  type="number"
-                  placeholder="cm"
-                  value={form.tiro}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="busto">Busto</label>
-                <input
-                  id="busto"
-                  name="busto"
-                  type="number"
-                  placeholder="cm"
-                  value={form.busto}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
+            <h3>Medidas de la Prenda</h3>
             <div className="form-group">
-              <label htmlFor="cadera">Cadera</label>
-              <input
-                id="cadera"
-                name="cadera"
-                type="number"
-                placeholder="cm"
-                value={form.cadera}
-                onChange={handleChange}
-              />
+              <label htmlFor="tipo_medida">Tipo de Medida / Prenda</label>
+              <select
+                id="tipo_medida"
+                value={tipoMedidas}
+                onChange={(e) => setTipoMedidas(e.target.value)}
+              >
+                <option value="superior">Prenda Superior (Poleron, Chaqueta, Camisa, Polera)</option>
+                <option value="inferior">Prenda Inferior (Pantalon, Falda, Buzo)</option>
+                <option value="completo">Vestido / Traje Completo</option>
+                <option value="personalizado">Medida Personalizada</option>
+                <option value="ninguna">No requiere medidas (Arreglo simple / Cierre)</option>
+              </select>
             </div>
+
+            {tipoMedidas === 'superior' && (
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="pecho">Pecho (cm)</label>
+                  <input
+                    id="pecho"
+                    name="pecho"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.pecho}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="largo">Largo (cm)</label>
+                  <input
+                    id="largo"
+                    name="largo"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.largo}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="manga">Manga (cm)</label>
+                  <input
+                    id="manga"
+                    name="manga"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.manga}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="hombros">Hombros (cm)</label>
+                  <input
+                    id="hombros"
+                    name="hombros"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.hombros}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tipoMedidas === 'inferior' && (
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="cintura">Cintura (cm)</label>
+                  <input
+                    id="cintura"
+                    name="cintura"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.cintura}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="largo">Largo (cm)</label>
+                  <input
+                    id="largo"
+                    name="largo"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.largo}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="cadera">Cadera (cm)</label>
+                  <input
+                    id="cadera"
+                    name="cadera"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.cadera}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tipoMedidas === 'completo' && (
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="pecho">Busto / Pecho (cm)</label>
+                  <input
+                    id="pecho"
+                    name="pecho"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.pecho}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="cintura">Cintura (cm)</label>
+                  <input
+                    id="cintura"
+                    name="cintura"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.cintura}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="cadera">Cadera (cm)</label>
+                  <input
+                    id="cadera"
+                    name="cadera"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.cadera}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="largo">Largo Total (cm)</label>
+                  <input
+                    id="largo"
+                    name="largo"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.largo}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tipoMedidas === 'personalizado' && (
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="nombre_personalizado">Nombre de la Medida</label>
+                  <input
+                    id="nombre_personalizado"
+                    name="nombre_personalizado"
+                    placeholder="Ej. Cuello, Basta, Cierre"
+                    value={medidas.nombre_personalizado}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="valor_personalizado">Valor (cm)</label>
+                  <input
+                    id="valor_personalizado"
+                    name="valor_personalizado"
+                    type="number"
+                    placeholder="cm"
+                    value={medidas.valor_personalizado}
+                    onChange={handleMedidaChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tipoMedidas === 'ninguna' && (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                Este trabajo no requiere registrar medidas corporales (ej. cambio de cierre o zurcido).
+              </p>
+            )}
           </div>
 
           {/* Card 4: Fechas y Pago */}
