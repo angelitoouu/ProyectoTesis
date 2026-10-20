@@ -19,12 +19,16 @@ const getClienteConHistorial = async (id) => {
 };
 
 const findOrCreateCliente = async ({ nombre, telefono, direccion }) => {
-  const existente = await pool.query('SELECT * FROM clientes WHERE telefono = $1', [telefono]);
+  const cleanPhone = (telefono || '').trim();
+  const cleanName = (nombre || '').trim();
+  const cleanDir = direccion ? direccion.trim() : null;
+
+  const existente = await pool.query('SELECT * FROM clientes WHERE telefono = $1', [cleanPhone]);
   if (existente.rows.length > 0) return existente.rows[0];
 
   const { rows } = await pool.query(
     'INSERT INTO clientes (nombre, telefono, direccion) VALUES ($1, $2, $3) RETURNING *',
-    [nombre, telefono, direccion || null]
+    [cleanName, cleanPhone, cleanDir]
   );
   return rows[0];
 };

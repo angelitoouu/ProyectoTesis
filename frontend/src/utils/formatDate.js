@@ -1,5 +1,5 @@
-export const formatFecha = (fecha) => {
-  if (!fecha) return '-';
+export const formatFecha = (fecha, fallback = 'Por confirmar') => {
+  if (!fecha) return fallback;
   const str = typeof fecha === 'string' ? fecha : new Date(fecha).toISOString();
   const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (match) {

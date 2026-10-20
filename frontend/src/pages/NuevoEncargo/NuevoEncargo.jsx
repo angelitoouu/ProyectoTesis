@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/formatCurrency';
 
-// Objetivo específico 1: registrar nuevos encargos (cliente, prenda, medidas, fecha de entrega y pago)
 const NuevoEncargo = () => {
+  const { autenticado } = useAuth();
+
   const [form, setForm] = useState({
     nombre_cliente: '',
     telefono_cliente: '',
@@ -15,7 +18,7 @@ const NuevoEncargo = () => {
     abono: '',
   });
 
-  const [tipoMedidas, setTipoMedidas] = useState('superior');
+  const [tipoMedidas, setTipoMedidas] = useState('ninguna');
   const [medidas, setMedidas] = useState({
     pecho: '',
     largo: '',
@@ -48,8 +51,13 @@ const NuevoEncargo = () => {
     e.preventDefault();
     setError(null);
 
-    if (abonoNum > precioNum) {
+    if (autenticado && abonoNum > precioNum) {
       setError('El abono inicial no puede ser mayor al precio total.');
+      return;
+    }
+
+    if (autenticado && !form.fecha_entrega_estimada) {
+      setError('Debes ingresar la fecha estimada de entrega para el taller.');
       return;
     }
 
@@ -77,6 +85,9 @@ const NuevoEncargo = () => {
         }
       }
 
+      // Si el cliente no fijó fecha estimada, se envía null para que la encargada la asigne al aceptar el pedido
+      const fechaFinal = form.fecha_entrega_estimada || null;
+
       const { data } = await api.post('/encargos', {
         nombre_cliente: form.nombre_cliente.trim(),
         telefono_cliente: form.telefono_cliente.trim(),
@@ -84,9 +95,9 @@ const NuevoEncargo = () => {
         prenda: form.prenda.trim(),
         descripcion_trabajo: form.descripcion_trabajo.trim(),
         medidas: Object.keys(medidasPayload).length > 0 ? medidasPayload : null,
-        fecha_entrega_estimada: form.fecha_entrega_estimada,
-        precio_total: precioNum,
-        abono: abonoNum,
+        fecha_entrega_estimada: fechaFinal,
+        precio_total: autenticado ? precioNum : 0,
+        abono: autenticado ? abonoNum : 0,
       });
 
       setTicketGenerado(data.codigo_ticket);
@@ -111,7 +122,7 @@ const NuevoEncargo = () => {
         valor_personalizado: '',
       });
     } catch (err) {
-      const mensaje = err.response?.data?.message || 'No se pudo registrar el encargo. Revisa la conexion.';
+      const mensaje = err.response?.data?.message || 'No se pudo registrar el encargo. Revisa la conexión con el servidor.';
       setError(mensaje);
       console.error(err);
     } finally {
@@ -130,24 +141,48 @@ const NuevoEncargo = () => {
   return (
     <div className="container">
       <div className="page-header">
-        <h1>Registrar Nuevo Encargo</h1>
-        <p>Ingresa los antecedentes del cliente, las especificaciones de la prenda, medidas y condiciones de pago.</p>
+        <h1>{autenticado ? 'Registrar Nuevo Encargo en Taller' : 'Solicitar Nuevo Encargo'}</h1>
+        <p>
+          {autenticado
+            ? 'Ingresa los antecedentes del cliente, las especificaciones de la prenda, medidas y condiciones de pago.'
+            : 'Ingresa tus datos y lo que necesitas hacerle a tu prenda. La encargada revisará tu solicitud, calculará el presupuesto y asignará la fecha de entrega.'}
+        </p>
       </div>
 
       {ticketGenerado && (
-        <div className="alert alert-success">
+        <div className="alert alert-success" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           <div>
-            <strong>Encargo registrado exitosamente.</strong>
-            <p style={{ marginTop: '0.2rem' }}>
-              Codigo de Ticket generado:{' '}
-              <span className="ticket-tag">{ticketGenerado}</span>
-              <button type="button" className="btn-copy" onClick={copiarTicket}>
-                {copiado ? 'Copiado' : 'Copiar ticket'}
-              </button>
-            </p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--success-text)', marginTop: '0.3rem' }}>
-              Proporciona este codigo o el numero de telefono al cliente para que realice seguimiento en la Consulta Publica.
-            </p>
+            <strong style={{ fontSize: '1.05rem' }}>
+              {autenticado ? 'Encargo registrado exitosamente.' : '¡Solicitud enviada exitosamente al taller!'}
+            </strong>
+          </div>
+          <p style={{ marginTop: '0.1rem' }}>
+            Código de Seguimiento (Ticket):{' '}
+            <span className="ticket-tag" style={{ fontSize: '0.95rem', marginLeft: '0.3rem' }}>{ticketGenerado}</span>
+            <button type="button" className="btn-copy" onClick={copiarTicket}>
+              {copiado ? 'Copiado' : 'Copiar ticket'}
+            </button>
+          </p>
+          <p style={{ fontSize: '0.88rem', color: 'var(--success-text)' }}>
+            {autenticado
+              ? 'Proporciona este código o el número de teléfono al cliente para que realice seguimiento en la Consulta Pública.'
+              : 'Guarda este código o tu número de teléfono. Con él podrás consultar el estado de tu prenda y el presupuesto cuando sea evaluado por el taller.'}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+            {autenticado ? (
+              <>
+                <Link to="/panel" className="btn" style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}>
+                  Ver en Panel de Estados
+                </Link>
+                <Link to="/clientes" className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}>
+                  Ver en Clientes
+                </Link>
+              </>
+            ) : (
+              <Link to="/consulta" className="btn" style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}>
+                Consultar Estado de mi Pedido
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -162,7 +197,7 @@ const NuevoEncargo = () => {
         <div className="form-grid">
           {/* Card 1: Cliente */}
           <div className="form-card">
-            <h3>Datos del Cliente</h3>
+            <h3>{autenticado ? 'Datos del Cliente' : 'Tus Datos de Contacto'}</h3>
             <div className="form-group">
               <label htmlFor="nombre_cliente">Nombre Completo *</label>
               <input
@@ -175,7 +210,7 @@ const NuevoEncargo = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="telefono_cliente">Telefono de Contacto *</label>
+              <label htmlFor="telefono_cliente">Teléfono de Contacto *</label>
               <input
                 id="telefono_cliente"
                 name="telefono_cliente"
@@ -184,10 +219,10 @@ const NuevoEncargo = () => {
                 onChange={handleChange}
                 required
               />
-              <span className="hint">Se usara para consultar estados y contacto.</span>
+              <span className="hint">Lo usarás para consultar el avance de tu prenda.</span>
             </div>
             <div className="form-group">
-              <label htmlFor="direccion_cliente">Direccion (Opcional)</label>
+              <label htmlFor="direccion_cliente">Dirección (Opcional)</label>
               <input
                 id="direccion_cliente"
                 name="direccion_cliente"
@@ -206,20 +241,21 @@ const NuevoEncargo = () => {
               <input
                 id="prenda"
                 name="prenda"
-                placeholder="Ej. Poleron, Vestido, Pantalon, Chaqueta"
+                placeholder="Ej. Polerón, Vestido, Pantalón, Chaqueta"
                 value={form.prenda}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="form-group">
-              <label htmlFor="descripcion_trabajo">Detalle del Trabajo a Realizar</label>
+              <label htmlFor="descripcion_trabajo">Detalle del Trabajo a Realizar *</label>
               <textarea
                 id="descripcion_trabajo"
                 name="descripcion_trabajo"
-                placeholder="Ej. Cambiarle el cierre, ajuste de costura, basta..."
+                placeholder="Ej. Cambiarle el cierre, ajuste de costura, basta, entalle..."
                 value={form.descripcion_trabajo}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -234,11 +270,11 @@ const NuevoEncargo = () => {
                 value={tipoMedidas}
                 onChange={(e) => setTipoMedidas(e.target.value)}
               >
-                <option value="superior">Prenda Superior (Poleron, Chaqueta, Camisa, Polera)</option>
-                <option value="inferior">Prenda Inferior (Pantalon, Falda, Buzo)</option>
+                <option value="superior">Prenda Superior (Polerón, Chaqueta, Camisa, Polera)</option>
+                <option value="inferior">Prenda Inferior (Pantalón, Falda, Buzo)</option>
                 <option value="completo">Vestido / Traje Completo</option>
                 <option value="personalizado">Medida Personalizada</option>
-                <option value="ninguna">No requiere medidas (Arreglo simple / Cierre)</option>
+                <option value="ninguna">No requiere medidas (Arreglo simple / Cierre / Basta)</option>
               </select>
             </div>
 
@@ -411,58 +447,81 @@ const NuevoEncargo = () => {
             )}
           </div>
 
-          {/* Card 4: Fechas y Pago */}
+          {/* Card 4: Fechas y Presupuesto */}
           <div className="form-card">
-            <h3>Entrega y Presupuesto</h3>
+            <h3>{autenticado ? 'Entrega y Presupuesto' : 'Fecha y Presupuesto'}</h3>
             <div className="form-group">
-              <label htmlFor="fecha_entrega_estimada">Fecha Estimada de Entrega *</label>
+              <label htmlFor="fecha_entrega_estimada">
+                {autenticado ? 'Fecha Estimada de Entrega *' : '¿Para cuándo necesitas tu prenda aproximadamente? (Opcional)'}
+              </label>
               <input
                 id="fecha_entrega_estimada"
                 name="fecha_entrega_estimada"
                 type="date"
                 value={form.fecha_entrega_estimada}
                 onChange={handleChange}
-                required
+                required={autenticado}
               />
-            </div>
-            <div className="form-row-2">
-              <div className="form-group">
-                <label htmlFor="precio_total">Precio Total ($) *</label>
-                <input
-                  id="precio_total"
-                  name="precio_total"
-                  type="number"
-                  min="0"
-                  placeholder="Ej. 25000"
-                  value={form.precio_total}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="abono">Abono Inicial ($)</label>
-                <input
-                  id="abono"
-                  name="abono"
-                  type="number"
-                  min="0"
-                  placeholder="Ej. 10000"
-                  value={form.abono}
-                  onChange={handleChange}
-                />
-              </div>
+              {!autenticado && (
+                <span className="hint">Si lo dejas en blanco, la encargada asignará la fecha al revisar el trabajo.</span>
+              )}
             </div>
 
-            <div className="financial-summary">
-              <span className="label">Saldo Pendiente a Cobrar:</span>
-              <span className="amount">{formatCurrency(saldoCalculado)}</span>
-            </div>
+            {autenticado ? (
+              <>
+                <div className="form-row-2">
+                  <div className="form-group">
+                    <label htmlFor="precio_total">Precio Total ($) *</label>
+                    <input
+                      id="precio_total"
+                      name="precio_total"
+                      type="number"
+                      min="0"
+                      placeholder="Ej. 25000"
+                      value={form.precio_total}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="abono">Abono Inicial ($)</label>
+                    <input
+                      id="abono"
+                      name="abono"
+                      type="number"
+                      min="0"
+                      placeholder="Ej. 10000"
+                      value={form.abono}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="financial-summary">
+                  <span className="label">Saldo Pendiente a Cobrar:</span>
+                  <span className="amount">{formatCurrency(saldoCalculado)}</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ background: 'var(--surface-alt)', border: '1px dashed var(--border)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginTop: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.2rem' }}>
+                  Presupuesto del Trabajo
+                </span>
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  El valor final del arreglo y las opciones de abono serán evaluados y confirmados por la encargada del taller al recepcionar tu prenda.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
           <button type="submit" disabled={cargando}>
-            {cargando ? 'Registrando...' : 'Registrar Encargo'}
+            {cargando
+              ? 'Enviando...'
+              : autenticado
+              ? 'Registrar Encargo en Taller'
+              : 'Enviar Solicitud de Encargo'}
           </button>
         </div>
       </form>

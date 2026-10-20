@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import EstadoBadge from '../../components/EstadoBadge';
 import { formatFecha } from '../../utils/formatDate';
@@ -35,10 +36,15 @@ const Consulta = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '800px' }}>
+    <div className="container" style={{ maxWidth: '820px' }}>
       <div className="page-header" style={{ textAlign: 'center', marginTop: '1rem' }}>
         <h1 style={{ marginTop: '0.5rem' }}>Consulta el Estado de tu Prenda</h1>
         <p>Ingresa tu número telefónico de contacto o el código de ticket para ver en qué etapa va tu encargo.</p>
+        <div style={{ marginTop: '0.9rem' }}>
+          <Link to="/solicitar" className="btn btn-secondary" style={{ fontSize: '0.86rem', padding: '0.45rem 1rem' }}>
+            ¿Necesitas confeccionar o arreglar una prenda? Solicita tu encargo aquí
+          </Link>
+        </div>
       </div>
 
       <div className="form-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -52,7 +58,7 @@ const Consulta = () => {
               onChange={(e) => setQuery(e.target.value)}
               required
             />
-            <span className="hint">Puedes buscar usando cualquiera de los dos datos.</span>
+            <span className="hint">Puedes buscar usando tu número de teléfono o tu código de ticket.</span>
           </div>
 
           <button type="submit" disabled={cargando}>
@@ -69,12 +75,17 @@ const Consulta = () => {
 
       {resultados && resultados.length > 0 && (
         <div style={{ marginTop: '2rem' }}>
-          <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-main)', fontWeight: 800 }}>
             Encargos encontrados ({resultados.length}):
           </h3>
 
           {resultados.map((r) => {
-            const saldo = Number(r.saldo) || 0;
+            const precio = Number(r.precio_total) || 0;
+            const abono = Number(r.abono) || 0;
+            const saldo = Math.max(0, precio - abono);
+            const pendienteAceptacion = r.estado === 'pendiente' || !r.fecha_entrega_estimada;
+            const pendientePresupuesto = precio === 0;
+
             return (
               <div className="consult-result-card" key={r.codigo_ticket}>
                 <div className="consult-result-header">
@@ -85,6 +96,17 @@ const Consulta = () => {
                   <EstadoBadge estado={r.estado} />
                 </div>
 
+                {r.descripcion_trabajo && (
+                  <div style={{ marginTop: '0.4rem', marginBottom: '0.8rem', padding: '0.6rem 0.8rem', background: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.2rem' }}>
+                      Trabajo Solicitado
+                    </span>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', fontStyle: 'italic' }}>
+                      "{r.descripcion_trabajo}"
+                    </p>
+                  </div>
+                )}
+
                 <div className="consult-detail-grid">
                   <div className="consult-detail-item">
                     <span className="caption">Cliente</span>
@@ -92,35 +114,61 @@ const Consulta = () => {
                   </div>
                   <div className="consult-detail-item">
                     <span className="caption">Fecha Estimada de Entrega</span>
-                    <span className="val">{formatFecha(r.fecha_entrega_estimada)}</span>
+                    <span className="val" style={{ color: !r.fecha_entrega_estimada ? 'var(--accent-amber)' : 'inherit', fontWeight: 700 }}>
+                      {r.fecha_entrega_estimada ? formatFecha(r.fecha_entrega_estimada) : 'Pendiente de fecha por la encargada'}
+                    </span>
                   </div>
                   <div className="consult-detail-item">
                     <span className="caption">Precio Total</span>
-                    <span className="val">{formatCurrency(r.precio_total)}</span>
+                    <span className="val" style={{ color: pendientePresupuesto ? 'var(--accent-amber)' : 'inherit' }}>
+                      {pendientePresupuesto ? 'Por cotizar en taller' : formatCurrency(precio)}
+                    </span>
                   </div>
                   <div className="consult-detail-item">
                     <span className="caption">Abonado</span>
-                    <span className="val">{formatCurrency(r.abono)}</span>
+                    <span className="val">{formatCurrency(abono)}</span>
                   </div>
                 </div>
 
                 <div
                   style={{
-                    backgroundColor: saldo > 0 ? 'var(--warning-bg)' : 'var(--success-bg)',
-                    border: `1px solid ${saldo > 0 ? 'var(--warning-border)' : 'var(--success-border)'}`,
-                    color: saldo > 0 ? 'var(--warning-text)' : 'var(--success-text)',
-                    padding: '0.8rem 1rem',
+                    backgroundColor: pendienteAceptacion
+                      ? '#eff6ff'
+                      : saldo > 0
+                      ? 'var(--warning-bg)'
+                      : 'var(--success-bg)',
+                    border: `1.5px solid ${
+                      pendienteAceptacion
+                        ? '#bfdbfe'
+                        : saldo > 0
+                        ? 'var(--warning-border)'
+                        : 'var(--success-border)'
+                    }`,
+                    color: pendienteAceptacion
+                      ? '#1e40af'
+                      : saldo > 0
+                      ? 'var(--warning-text)'
+                      : 'var(--success-text)',
+                    padding: '0.85rem 1.1rem',
                     borderRadius: 'var(--radius-sm)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: '0.5rem',
+                    marginTop: '0.8rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
                   }}
                 >
                   <span style={{ fontWeight: 600 }}>
-                    {saldo > 0 ? 'Saldo a cancelar al retirar la prenda:' : 'Prenda completamente pagada'}
+                    {pendienteAceptacion
+                      ? 'Solicitud recibida. La encargada del taller revisará tu pedido para aceptarlo y asignarle la fecha aproximada de entrega.'
+                      : saldo > 0
+                      ? 'Saldo a cancelar al retirar la prenda:'
+                      : 'Prenda completamente pagada'}
                   </span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>{formatCurrency(saldo)}</span>
+                  {!pendientePresupuesto && (
+                    <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>{formatCurrency(saldo)}</span>
+                  )}
                 </div>
               </div>
             );
