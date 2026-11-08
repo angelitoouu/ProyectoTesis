@@ -30,10 +30,26 @@ const normalizarTelefono = (telefono) => {
   return String(telefono).trim().replace(/\s+/g, '');
 };
 
+const validarFechaEntrega = (fecha) => {
+  if (!fecha || typeof fecha !== 'string') return false;
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(fecha)) return false;
+  const parsedDate = new Date(fecha);
+  return !isNaN(parsedDate.getTime());
+};
+
+const validarNombreCliente = (nombre) => {
+  if (!nombre || typeof nombre !== 'string') return false;
+  const trimmed = nombre.trim();
+  return trimmed.length >= 2;
+};
+
 module.exports = {
   ESTADOS_VALIDOS,
   validarMontos,
   calcularSaldo,
   validarEstadoTaller,
   normalizarTelefono,
+  validarFechaEntrega,
+  validarNombreCliente,
 };
