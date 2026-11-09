@@ -25,10 +25,16 @@ jobs:
           mkdir -p ./backend/src/config
           cp ~/backend.env ./backend/src/config/.env 2>/dev/null || true
 
+      - name: Compilar Frontend
+        run: |
+          source ~/.nvm/nvm.sh
+          cd frontend
+          npm install
+          npm run build
+
       - name: Reiniciar Backend con PM2
         run: |
           source ~/.nvm/nvm.sh
           cd backend
           setsid pm2 restart api-backend || setsid pm2 start server.js --name "api-backend"
           pm2 save
-
