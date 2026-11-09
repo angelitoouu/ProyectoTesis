@@ -30,7 +30,7 @@ const Inicio = () => {
             border: '1px solid var(--primary-border)',
           }}
         >
-          ✂️ Servicio de Costura y Confección a Medida
+        Servicio de Costura y Confección a Medida
         </span>
 
         <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2, margin: '0.4rem 0' }}>
@@ -285,3 +285,4 @@ const Inicio = () => {
 };
 
 export default Inicio;
+
