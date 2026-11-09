@@ -41,7 +41,7 @@ const Navbar = () => {
               Clientes
             </NavLink>
             <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-              Vista Cliente
+              Ver Inicio
             </NavLink>
             <button
               type="button"
@@ -62,8 +62,11 @@ const Navbar = () => {
         ) : (
           // Vista pública para los clientes
           <>
+            <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+              Inicio
+            </NavLink>
             <NavLink to="/solicitar" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Nuevo Encargo
+              Solicitar Encargo
             </NavLink>
             <NavLink to="/consulta" className={({ isActive }) => (isActive ? 'active' : '')}>
               Seguimiento de Pedido

@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import Inicio from '../pages/Inicio/Inicio';
 import Consulta from '../pages/Consulta/Consulta';
 import NuevoEncargo from '../pages/NuevoEncargo/NuevoEncargo';
 import Login from '../pages/Login/Login';
@@ -8,8 +9,8 @@ import RutaProtegida from './RutaProtegida';
 
 const AppRoutes = () => (
   <Routes>
-    {/* Vistas públicas para clientes: Nuevo Encargo y Seguimiento */}
-    <Route path="/" element={<NuevoEncargo />} />
+    {/* Vistas públicas para clientes: Inicio, Solicitud y Seguimiento */}
+    <Route path="/" element={<Inicio />} />
     <Route path="/solicitar" element={<NuevoEncargo />} />
     <Route path="/consulta" element={<Consulta />} />
 
