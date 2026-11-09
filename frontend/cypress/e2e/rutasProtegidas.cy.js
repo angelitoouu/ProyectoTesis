@@ -23,7 +23,7 @@ describe('Prueba E2E 4: Seguridad y Protección de Rutas Privadas del Taller', (
     // Navegar a clientes ahora que está autenticada
     cy.contains('a', 'Clientes').click();
     cy.url().should('include', '/clientes');
-    cy.contains('Gestión de Clientes').should('be.visible');
+    cy.contains('Fichas de Clientes').should('be.visible');
   });
 });
 
