@@ -1,0 +1,68 @@
+# Definir los servicios que componen la aplicación
+services:
+  # Servicio 1: Base de Datos PostgreSQL
+  db:
+    # Imagen oficial de PostgreSQL 16
+    image: postgres:16-alpine
+    # Variables que la imagen usa al crear la base de datos por primera vez
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: TallerCostura
+    # Publica el puerto 5432 en tu máquina para conectarte con algún gestor (ej. DBeaver)
+    ports:
+      - "5432:5432"
+    # Volumen nombrado que guarda los datos en disco para que persistan entre reinicios
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Comprueba cada 5s que PostgreSQL acepta conexiones
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d TallerCostura"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Servicio 2: Backend (Node.js, Express)
+  backend:
+    # Construye la imagen a partir de backend/Dockerfile
+    build:
+      context: ./backend
+    # Variables de entorno para la red de Docker y conexión con la base de datos
+    environment:
+      HOST: db
+      PORT: "3000"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USERNAME: postgres
+      PASSWORD: password123
+      DATABASE: TallerCostura
+      NODE_ENV: development
+      SMTP_USER: angelosilvaoliva9@gmail.com
+      SMTP_PASS: bxmk cgyy lamr pcmi
+      SMTP_FROM: Taller de Costura <angelosilvaoliva9@gmail.com>
+    # No inicia el backend hasta que la base de datos esté "healthy"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Publica el backend en localhost:3000
+    ports:
+      - "3000:3000"
+
+  # Servicio 3: Frontend de React servido con Vite Preview
+  frontend:
+    # Construye la imagen a partir de frontend/Dockerfile
+    build:
+      context: ./frontend
+      # Argumento de build: URL de la API que los servicios del frontend usarán en el navegador
+      args:
+        VITE_API_URL: http://localhost:3000/api
+        VITE_BASE_URL: http://localhost:3000/api
+    # Publica Vite Preview (puerto 4173 dentro del contenedor) en localhost:4173
+    ports:
+      - "4173:4173"
+    depends_on:
+      - backend
+
+# Declara el volumen nombrado usado por la base de datos
+volumes:
+  postgres_data:
