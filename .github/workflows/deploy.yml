@@ -20,10 +20,20 @@ jobs:
           npm install
 
       - name: Inyectar variables de entorno Backend
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
         run: |
           cp ~/backend.env ./backend/.env
+          # Agregar o actualizar las credenciales SMTP en el .env
+          grep -v "^SMTP_" ./backend/.env > ./backend/.env.tmp || true
+          mv ./backend/.env.tmp ./backend/.env
+          echo "SMTP_USER=${SMTP_USER}" >> ./backend/.env
+          echo "SMTP_PASS=${SMTP_PASS}" >> ./backend/.env
+          echo "SMTP_FROM=${SMTP_FROM:-$SMTP_USER}" >> ./backend/.env
           mkdir -p ./backend/src/config
-          cp ~/backend.env ./backend/src/config/.env 2>/dev/null || true
+          cp ./backend/.env ./backend/src/config/.env 2>/dev/null || true
 
       - name: Compilar Frontend
         run: |
